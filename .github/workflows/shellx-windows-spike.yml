@@ -1,0 +1,181 @@
+name: ShellX Windows spike
+
+# ShellX W0 spike (Task 6): does cmux-tui + libghostty-vt build and run on
+# Windows for both the MSVC and the GNU Rust targets? Setup steps are copied
+# from upstream `cmux-tui.yml` (job `test-windows`) and
+# `cmux-tui-build-package.yml` (job `build-windows`, ConPTY smoke). This
+# workflow needs no secrets and publishes nothing: it only uploads the built
+# `cmux-tui.exe` as a run artifact.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - shellx/w0-spikes
+
+permissions: {}
+
+concurrency:
+  group: shellx-windows-spike-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: windows (${{ matrix.target }})
+    # Forks (lephus/shellx-pro) get GitHub-hosted windows-2025, which is what
+    # windows-latest points at today. The spelling is upstream's own fork
+    # branch: the repo guards (test_ci_self_hosted_guard.sh,
+    # test_ci_fork_runner_routing.py) reject a bare windows-latest and any
+    # other fork label.
+    runs-on: ${{ github.repository_owner != 'manaflow-ai' && 'windows-2025' || 'blacksmith-4vcpu-windows-2025' }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-pc-windows-msvc
+          - x86_64-pc-windows-gnu
+    env:
+      # Only read for the -gnu target (upstream sets the same for MinGW).
+      CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS: -C link-arg=-fuse-ld=lld
+      CMUX_TUI_EXE: cmux-tui/target/${{ matrix.target }}/release/cmux-tui.exe
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      # ghostty-vt-sys/build.rs builds libghostty-vt with zig from the
+      # `ghostty` submodule at the repo root (../../../ghostty). Only that
+      # submodule is needed; init it the way upstream does (shallow, retried).
+      - name: Init ghostty submodule
+        shell: bash
+        run: bash scripts/ci/init-submodule.sh ghostty
+
+      - name: Resolve Ghostty Zig version
+        id: ghostty-zig-version
+        shell: bash
+        run: |
+          version="$(bash ./scripts/ghostty-zig-version.sh)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # The W0 plan pins Zig 0.16.0; flag it loudly if the submodule moved.
+          if [[ "$version" != "0.16.0" ]]; then
+            echo "::warning::ghostty minimum_zig_version is $version, plan expects 0.16.0"
+          fi
+
+      - name: Install zig
+        uses: mlugg/setup-zig@8d6198c65fb0feaa111df26e6b467fea8345e46f # v2.0.5
+        with:
+          version: ${{ steps.ghostty-zig-version.outputs.version }}
+
+      - name: Set up pinned Rust
+        uses: ./.github/actions/setup-cmux-tui-rust
+
+      - name: Install Rust target
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          rustup target add "$TARGET"
+          if [[ "$TARGET" == *-windows-gnu ]]; then
+            # MSYS2 MinGW toolchain (gcc + ld.lld) preinstalled on the runner.
+            printf '%s\n' 'C:\msys64\mingw64\bin' >> "$GITHUB_PATH"
+          fi
+
+      - name: Verify LLVM GNU linker
+        if: matrix.target == 'x86_64-pc-windows-gnu'
+        shell: bash
+        run: ld.lld --version
+
+      - name: Show toolchain
+        shell: bash
+        run: |
+          zig version
+          rustc --version --verbose
+          cargo --version
+
+      - name: Build libghostty-vt (ghostty-vt-sys)
+        working-directory: cmux-tui
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          unset CMUX_GHOSTTY_SRC
+          cargo build -p ghostty-vt-sys --release --locked --target "$TARGET"
+
+      - name: Run Windows platform Cargo tests
+        working-directory: cmux-tui
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          unset CMUX_GHOSTTY_SRC
+          cargo test -p cmux-tui-core --lib --release --locked \
+            --target "$TARGET" \
+            platform::tests:: -- --test-threads=1
+
+      - name: Build cmux-tui
+        id: build-cmux-tui
+        working-directory: cmux-tui
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          unset CMUX_GHOSTTY_SRC
+          cargo build -p cmux-tui --bin cmux-tui --release --locked --target "$TARGET"
+
+      - name: Test Windows long-path state handling
+        working-directory: cmux-tui
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          cargo test --release --locked --target "$TARGET" \
+            -p cmux-tui-core --lib normalize_long_windows
+          cargo test --release --locked --target "$TARGET" \
+            -p cmux-tui-core --lib registry_opens_and_persists_under_a_long_windows_state_root
+          cargo test --release --locked --target "$TARGET" \
+            -p cmux-tui-core --lib socket_start_lock_acquires_a_new_lock_file
+
+      - name: Verify long Windows state path
+        shell: bash
+        run: python cmux-tui/scripts/smoke-windows-long-state-path.py --binary "$CMUX_TUI_EXE"
+
+      - name: Verify Windows terminal process exit
+        shell: bash
+        run: python cmux-tui/scripts/smoke-windows-process-wait.py --binary "$CMUX_TUI_EXE"
+
+      - name: Set up Python for ConPTY verification
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.12.10"
+
+      - name: Verify Windows ConPTY resize
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check --require-hashes \
+            -r cmux-tui/scripts/requirements-windows-conpty.txt
+          python cmux-tui/scripts/smoke-windows-conpty-resize.py --binary "$CMUX_TUI_EXE"
+
+      - name: Verify remote commands fail clearly on Windows
+        shell: bash
+        run: |
+          set +e
+          output="$("$CMUX_TUI_EXE" remote-probe --json 2>&1)"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          test "$status" -eq 1
+          grep -F "remote daemon commands require Unix sockets" <<<"$output"
+
+      - name: Upload cmux-tui.exe
+        # Keep the exe even when a smoke step fails (Task 7 tests it by hand).
+        if: always() && steps.build-cmux-tui.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cmux-tui-${{ matrix.target }}
+          path: ${{ env.CMUX_TUI_EXE }}
+          if-no-files-found: error
+          retention-days: 14
