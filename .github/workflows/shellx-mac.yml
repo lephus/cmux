@@ -73,6 +73,7 @@ jobs:
           sw_vers
 
       - name: ShellXBrand package tests
+        if: hashFiles('Packages/Shared/ShellXBrand/Package.swift') != ''
         run: swift test --package-path Packages/Shared/ShellXBrand
 
       - name: Capture cache keys
