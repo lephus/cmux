@@ -24931,7 +24931,7 @@ mod tests {
             serde_json::from_value::<ProtocolKeyInput>(inactive_consumed_modifier).unwrap();
         assert!(KeyInput::try_from(inactive_consumed_modifier).is_err());
 
-        let invalid_key = KeyInput { key: u32::MAX, ..input.clone() };
+        let invalid_key = KeyInput { key: u32::MAX as _, ..input.clone() };
         assert!(ProtocolKeyInput::try_from(&invalid_key).is_err());
         let invalid_mods = KeyInput { mods: Mods(u16::MAX), ..input.clone() };
         assert!(ProtocolKeyInput::try_from(&invalid_mods).is_err());
