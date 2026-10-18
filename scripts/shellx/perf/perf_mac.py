@@ -58,6 +58,7 @@ CAT_FILE_BYTES = 100 * 1024 * 1024
 CAT_LINE_BYTES = 80
 COLD_START_TIMEOUT_S = 120.0
 SOCKET_TIMEOUT_S = 60.0
+SPLIT_SETTLE_TIMEOUT_S = 10.0
 CAT_TIMEOUT_S = 900.0
 IDLE_WAIT_S = 60.0
 CPU_INTERVAL_S = 5.0
@@ -476,8 +477,18 @@ class Session:
     def make_four_panes(self) -> int:
         for direction in ("right", "down", "down"):
             self.run_cli("new-split", direction)
-        payload = json.loads(self.run_cli("--json", "list-panes").stdout or "{}")
-        panes = len(payload.get("panes") or [])
+
+        # `new-split` returns before the app applies the split, so `list-panes`
+        # can lag behind by one pane for a moment: poll briefly.
+        def count() -> int:
+            payload = json.loads(self.run_cli("--json", "list-panes").stdout or "{}")
+            return len(payload.get("panes") or [])
+
+        deadline = time.monotonic() + SPLIT_SETTLE_TIMEOUT_S
+        panes = count()
+        while panes < 4 and time.monotonic() < deadline:
+            time.sleep(0.1)
+            panes = count()
         if panes < 4:
             raise HarnessError(f"expected 4 panes after 3 splits, the app reports {panes}")
         return panes

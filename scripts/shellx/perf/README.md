@@ -89,7 +89,7 @@ read (cmux's integration hands a user `ZDOTDIR` through as
 2. **Idle with 4 panes** (`idle_rss_mb_4panes`, `idle_cpu_pct`)
    - `cli --socket S new-split right`, `new-split down`, `new-split down`
      (no `--focus`, so focus stays on the first terminal);
-     `cli --socket S --json list-panes` must report ≥ 4 panes.
+     `cli --socket S --json list-panes` must report ≥ 4 panes (polled for up to 10 s: `new-split` returns before the app applies the split).
    - Wait 60 s. RSS = sum of `ps -o pid=,rss= -p <pids>` over every process
      inside the bundle, in MiB (KiB / 1024). The per-executable split is kept
      in `samples.runs[].idle.rss_mb_by_process`.
