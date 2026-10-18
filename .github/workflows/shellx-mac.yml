@@ -1,0 +1,192 @@
+name: shellx-mac
+
+# ShellX for Mac: fast static checks, the ShellXBrand package tests, the ShellX
+# guard tests, and a Debug build of the `cmux` app scheme on a GitHub-hosted
+# macOS 26 runner (this fork is public, so the minutes are free).
+#
+# Modeled on upstream's fork path in ci-macos-compat.yml / main-compile-probe.yml:
+# scripts/select-ci-xcode.sh, the sha-pinned prebuilt GhosttyKit
+# (scripts/download-prebuilt-ghosttykit.sh, checked against
+# scripts/ghosttykit-checksums.txt), Rust + Bun for the bundled helpers, and
+# CMUX_SKIP_ZIG_BUILD=1 on macOS 26. None of upstream's owned-pool, R2 or seed
+# machinery is used.
+#
+# Warm builds: DerivedData is cached, and scripts/shellx/ci/normalize-mtimes.py
+# gives every checked-out file a content-derived mtime so unchanged inputs look
+# unchanged to Xcode. GitHub cache scope: a branch restores its own caches and
+# those of the default branch (main), so a lane branch's first run is cold.
+
+on:
+  push:
+    branches:
+      - "shellx/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shellx-mac-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mac:
+    name: Build and test (macOS)
+    runs-on: macos-26
+    timeout-minutes: 120
+    env:
+      CMUX_CI_REQUIRED_MACOS_SDK_MAJOR: "26"
+      # zig's MachO linker can't resolve libSystem on macOS 26 (upstream
+      # ci-macos-compat.yml); GhosttyKit comes prebuilt instead.
+      CMUX_SKIP_ZIG_BUILD: "1"
+      # No Go on the runner; the tunnel extension is not shipped by ShellX.
+      CMUX_WIREGUARD_GO_REQUIRE: "0"
+      DERIVED_DATA: /Users/runner/shellx-derived-data
+      SOURCE_PACKAGES: /Users/runner/shellx-source-packages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Static checks (verify-local --all)
+        run: python3 scripts/verify-local.py --all --jobs 3
+
+      - name: ShellX guard tests
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for test in tests/test_shellx_*.py; do
+            echo "::group::$test"
+            python3 "$test"
+            echo "::endgroup::"
+          done
+
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          ./scripts/select-ci-xcode.sh
+          version="$(xcodebuild -version | awk 'NR == 1 { print $2 }')"
+          echo "XCODE_VER=$version" >> "$GITHUB_ENV"
+          xcodebuild -version
+          sw_vers
+
+      - name: ShellXBrand package tests
+        run: swift test --package-path Packages/Shared/ShellXBrand
+
+      - name: Capture cache keys
+        id: keys
+        run: |
+          set -euo pipefail
+          echo "ghostty=$(git -C ghostty rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache GhosttyKit.xcframework
+        id: cache-ghosttykit
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: GhosttyKit.xcframework
+          key: shellx-ghosttykit-v1-${{ steps.keys.outputs.ghostty }}
+
+      - name: Download prebuilt GhosttyKit.xcframework (sha-pinned)
+        if: steps.cache-ghosttykit.outputs.cache-hit != 'true'
+        run: ./scripts/download-prebuilt-ghosttykit.sh
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Install Rust
+        run: ./scripts/install-rust-ci.sh
+
+      - name: Cache Swift packages
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ env.SOURCE_PACKAGES }}
+          key: shellx-spm-v1-${{ hashFiles('cmux.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: shellx-spm-v1-
+
+      - name: Sanitize Swift package cache
+        run: |
+          mkdir -p "$SOURCE_PACKAGES"
+          python3 scripts/ci/sanitize-xcode-source-packages-cache.py "$SOURCE_PACKAGES"
+
+      - name: Resolve Swift packages
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if xcodebuild -project cmux.xcodeproj -scheme cmux -configuration Debug \
+              -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
+              -resolvePackageDependencies; then
+              exit 0
+            fi
+            [ "$attempt" -eq 3 ] && { echo "::error::Swift package resolution failed 3 times"; exit 1; }
+            sleep $((attempt * 10))
+          done
+
+      - name: Restore DerivedData
+        id: restore-dd
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ env.DERIVED_DATA }}
+          key: shellx-dd-v1-${{ env.XCODE_VER }}-${{ steps.keys.outputs.ghostty }}-${{ hashFiles('cmux.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ github.sha }}
+          restore-keys: |
+            shellx-dd-v1-${{ env.XCODE_VER }}-${{ steps.keys.outputs.ghostty }}-${{ hashFiles('cmux.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-
+            shellx-dd-v1-${{ env.XCODE_VER }}-${{ steps.keys.outputs.ghostty }}-
+
+      - name: Content-derived mtimes for incremental builds
+        run: |
+          set -euo pipefail
+          python3 scripts/shellx/ci/normalize-mtimes.py .
+          # A restored DerivedData lives on a new volume/inode; let XCBuild
+          # trust the recorded file signatures anyway (upstream does the same
+          # when it adopts a DerivedData seed).
+          defaults write com.apple.dt.XCBuild IgnoreFileSystemDeviceInodeChanges -bool YES
+
+      - name: Build app (Debug)
+        id: build
+        run: |
+          set -euo pipefail
+          xcodebuild -project cmux.xcodeproj -scheme cmux -configuration Debug \
+            -derivedDataPath "$DERIVED_DATA" \
+            -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
+            -disableAutomaticPackageResolution \
+            -destination "platform=macOS" \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            build 2>&1 | tee "$RUNNER_TEMP/build.log" | grep -E "error:|warning: .*ShellX|\*\* BUILD" || true
+          grep -q "\*\* BUILD SUCCEEDED \*\*" "$RUNNER_TEMP/build.log" || {
+            echo "::error::xcodebuild failed; last 200 lines:"
+            tail -n 200 "$RUNNER_TEMP/build.log"
+            exit 1
+          }
+
+      - name: Prune DerivedData before caching
+        id: prune-dd
+        if: steps.build.outcome == 'success' && steps.restore-dd.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          rm -rf "$DERIVED_DATA/Logs" "$DERIVED_DATA/Index.noindex"
+          bytes="$(du -sk "$DERIVED_DATA" | awk '{print $1 * 1024}')"
+          echo "DerivedData: $((bytes / 1024 / 1024)) MiB"
+          # GitHub's per-repo cache budget is 10 GB; never let one entry take it.
+          if [ "$bytes" -lt $((7 * 1024 * 1024 * 1024)) ]; then
+            echo "save=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::DerivedData too large to cache ($((bytes / 1024 / 1024)) MiB)"
+          fi
+
+      - name: Save DerivedData
+        if: steps.prune-dd.outputs.save == 'true'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ env.DERIVED_DATA }}
+          key: shellx-dd-v1-${{ env.XCODE_VER }}-${{ steps.keys.outputs.ghostty }}-${{ hashFiles('cmux.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}-${{ github.sha }}
+
+      - name: Upload build log on failure
+        if: failure() && steps.build.outcome == 'failure'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: shellx-mac-build-log
+          path: ${{ runner.temp }}/build.log
+          retention-days: 7
