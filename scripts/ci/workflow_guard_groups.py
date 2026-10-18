@@ -182,6 +182,8 @@ PATH_OWNERS = {
     "scripts/ci/package_interface_fingerprint.py": frozenset(("ci",)),
     "scripts/ci/swift_incremental_diagnostics.py": frozenset(("preflight",)),
     "scripts/ci/test_execution_registry.py": frozenset(("preflight",)),
+    # test_shellx_perf_harness.py imports it.
+    "scripts/shellx/perf/perf_mac.py": frozenset(("preflight",)),
     "skills/cmux-cloud-vm/SKILL.md": frozenset(("preflight",)),
     "skills/cmux-cloud-vm/references/agent-workflows.md": frozenset(("preflight",)),
     "skills/cmux-cloud-vm/references/commands.md": frozenset(("preflight",)),

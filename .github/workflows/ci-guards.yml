@@ -389,6 +389,10 @@ jobs:
         if: ${{ matrix.group == 'preflight' }}
         run: python3 tests/test_pr_media.py
 
+      - name: Test the ShellX macOS perf regression gate
+        if: ${{ matrix.group == 'preflight' }}
+        run: python3 tests/test_shellx_perf_harness.py
+
       - name: Validate cmux-cloud-vm skill covers the vm CLI
         if: ${{ matrix.group == 'preflight' }}
         run: python3 tests/test_cloud_vm_skill_coverage.py
