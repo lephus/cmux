@@ -3335,6 +3335,7 @@
 		EE45396CAC0142289F52DCA0 /* ShellIntegrationSendTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831E0F65E3D945CE8970852E /* ShellIntegrationSendTransportTests.swift */; };
 		C0F16A000000000000000001 /* ShellStartupMatrixTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F16A000000000000000002 /* ShellStartupMatrixTests.swift */; };
 		C0F16C000000000000000001 /* ShellStartupMissingBundleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F16C000000000000000002 /* ShellStartupMissingBundleTests.swift */; };
+		A6DFDAFBD0A6CCB95F5EF7C8 /* ShellXBridgeSpike.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6D5C8C24BF75C2E403A2F84 /* ShellXBridgeSpike.swift */; };
 		1521D55DC63D5E5FC4955E31 /* ShortcutAndCommandPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6083A7DAD962E287FC2FFE94 /* ShortcutAndCommandPaletteTests.swift */; };
 		76027A12C93B4538BF22C71E /* ShortcutBareStartRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB7F2E9143904957AAA70726 /* ShortcutBareStartRouting.swift */; };
 		5C0DE0DE0000000000000004 /* ShortcutDiscoveryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C0DE0DE0000000000000003 /* ShortcutDiscoveryButton.swift */; };
@@ -7899,6 +7900,7 @@
 		831E0F65E3D945CE8970852E /* ShellIntegrationSendTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellIntegrationSendTransportTests.swift; sourceTree = "<group>"; };
 		C0F16A000000000000000002 /* ShellStartupMatrixTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellStartupMatrixTests.swift; sourceTree = "<group>"; };
 		C0F16C000000000000000002 /* ShellStartupMissingBundleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellStartupMissingBundleTests.swift; sourceTree = "<group>"; };
+		F6D5C8C24BF75C2E403A2F84 /* ShellXBridgeSpike.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellXBridgeSpike.swift; sourceTree = "<group>"; };
 		6083A7DAD962E287FC2FFE94 /* ShortcutAndCommandPaletteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutAndCommandPaletteTests.swift; sourceTree = "<group>"; };
 		AB7F2E9143904957AAA70726 /* ShortcutBareStartRouting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/ShortcutBareStartRouting.swift; sourceTree = "<group>"; };
 		5C0DE0DE0000000000000003 /* ShortcutDiscoveryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutDiscoveryButton.swift; sourceTree = "<group>"; };
@@ -9704,6 +9706,7 @@
 				5FBEE7A31EE7A31EE7A30002 /* MobileTerminalFramePacer.swift */,
 				5FBEE7A21EE7A21EE7A20002 /* MobileViewportApplyGovernor.swift */,
 				ACA7C4A70000000000000100 /* AgentChat */,
+				F6D5C8C24BF75C2E403A2F84 /* ShellXBridgeSpike.swift */,
 			);
 			name = Mobile;
 			path = Mobile;
@@ -16540,6 +16543,7 @@
 				F0ACC0DE0000000000000011 /* SharedLiveAgentIndex.swift in Sources */,
 				F0ACC0DE0000000000000007 /* SharedLiveAgentIndexLoader.swift in Sources */,
 				121580061215800612158006 /* SharedLiveAgentIndexRefreshOutcome.swift in Sources */,
+				A6DFDAFBD0A6CCB95F5EF7C8 /* ShellXBridgeSpike.swift in Sources */,
 				76027A12C93B4538BF22C71E /* ShortcutBareStartRouting.swift in Sources */,
 				5C0DE0DE0000000000000004 /* ShortcutDiscoveryButton.swift in Sources */,
 				125BAEF2FE3B454547B964D1 /* ShortcutHintPill.swift in Sources */,

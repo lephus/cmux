@@ -12,6 +12,10 @@ let cmuxTerminalOutputTeeCallback: @convention(c) (
         let buffer = UnsafeBufferPointer(start: rebound, count: count)
         TerminalScrollbackCheckpointActivity.recordOutput(context.scrollbackCheckpointFlags)
         MobileTerminalByteTee.shared.append(surfaceID: context.surfaceID, bytes: buffer)
+        #if DEBUG
+        // W0 bridge spike: forward raw PTY output to a cmux-tui virtual PTY.
+        ShellXBridgeTee.consume(surfaceID: context.surfaceID, buffer: buffer)
+        #endif
         TerminalPredictionCenter.shared.consumeOutput(
             surfaceID: context.surfaceID,
             bytes: buffer

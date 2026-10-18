@@ -51,6 +51,8 @@ mod stream_interrupt;
 mod surface;
 mod terminal_metadata;
 mod workspace_registry;
+#[cfg(unix)]
+mod virtual_pty;
 
 pub mod layout;
 pub mod platform;

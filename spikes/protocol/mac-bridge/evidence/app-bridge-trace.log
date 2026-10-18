@@ -1,0 +1,15 @@
+1792342888.18994 shellx-bridge: listening on /tmp/cmux-debug-w0-bridge-shellx-bridge.sock
+1792342933.37927 shellx-bridge: conn 1 bound mode=attach surface=7C923DD2-66DE-4D8B-A599-E99161105AD0
+1792342933.384628 shellx-bridge: conn 1 mac grid 94x37
+1792342960.558305 shellx-bridge: conn 1 mac grid 46x37
+1792343062.1800041 shellx-bridge: conn 1 remote resize 100x30 -> ["workspace_id": "9DAB6CD2-AB60-40E5-B111-625377D8B6D0", "columns": 46, "rows": 30, "render_epoch": "27A76A50-9409-41D7-9B79-A3D6D91B637A", "render_revision_floor": 0, "surface_id": "7C923DD2-66DE-4D8B-A599-E99161105AD0"]
+1792343062.180192 shellx-bridge: conn 1 mac grid 46x30
+1792343159.4929671 shellx-bridge: conn 1 remote resize 46x37 -> ["rows": 37, "workspace_id": "9DAB6CD2-AB60-40E5-B111-625377D8B6D0", "columns": 46, "render_epoch": "27A76A50-9409-41D7-9B79-A3D6D91B637A", "surface_id": "7C923DD2-66DE-4D8B-A599-E99161105AD0", "render_revision_floor": 0]
+1792343159.493339 shellx-bridge: conn 1 mac grid 46x37
+1792343214.463104 shellx-bridge: conn 2 bound mode=create surface=90BD7412-BDBF-461C-A2EE-34AE508E296C
+1792343214.732393 shellx-bridge: conn 2 mac grid 46x37
+1792343287.3324351 shellx-bridge: conn 2 mac grid 49x37
+1792343287.332769 shellx-bridge: conn 1 mac grid 44x37
+1792343306.851115 shellx-bridge: conn 1 remote resize 49x37 -> ["rows": 37, "render_epoch": "27A76A50-9409-41D7-9B79-A3D6D91B637A", "render_revision_floor": 0, "surface_id": "7C923DD2-66DE-4D8B-A599-E99161105AD0", "workspace_id": "9DAB6CD2-AB60-40E5-B111-625377D8B6D0", "columns": 44]
+1792343339.117538 shellx-bridge: conn 1 closed (out=33693136 B, in=268 B)
+1792343339.171761 shellx-bridge: conn 2 closed (out=1020 B, in=71 B)

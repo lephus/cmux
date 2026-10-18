@@ -1,0 +1,11 @@
+cmux-tui: remote daemon _OtZGpnAMasZzBUkXLUo9g, link /tmp/shxbridge/dstate/sessions/c2h4YnJpZGdl/link.sock, admin /tmp/shxbridge/dstate/sessions/c2h4YnJpZGdl/admin.sock
+cmux-tui: remote route relay+ws://127.0.0.1:8797
+cmux-tui: remote route unix:///tmp/shxbridge/dstate/sessions/c2h4YnJpZGdl/link.sock
+cmux-tui: headless, control socket at /tmp/shxbridge/tmp/cmux-tui-501/shxbridge.sock
+shellx bridge: surface 2 virtual PTY bound ack={"mode":"attach","surface_id":"7C923DD2-66DE-4D8B-A599-E99161105AD0","workspace_id":"9DAB6CD2-AB60-40E5-B111-625377D8B6D0"}
+shellx bridge: host grid 46x37 applied to mirror: Ok(true)
+shellx bridge: host grid 46x30 applied to mirror: Ok(true)
+shellx bridge: host grid 46x37 applied to mirror: Ok(false)
+shellx bridge: surface 5 virtual PTY bound ack={"mode":"create","surface_id":"90BD7412-BDBF-461C-A2EE-34AE508E296C","workspace_id":"9DAB6CD2-AB60-40E5-B111-625377D8B6D0"}
+shellx bridge: host grid 44x37 applied to mirror: Ok(true)
+shellx bridge: host grid 49x37 applied to mirror: Ok(true)

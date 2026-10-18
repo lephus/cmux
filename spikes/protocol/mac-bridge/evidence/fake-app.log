@@ -1,0 +1,8 @@
+1792341305.035 listening /tmp/shxfake/b.sock
+1792341311.006 conn 1 hello {'cols': 80, 'cwd': None, 'rows': 24}
+1792341401.508 conn 2 hello {'cols': 80, 'cwd': None, 'rows': 24}
+1792341442.906 conn 1 eof
+1792341442.928 conn 2 eof
+1792341460.003 conn 3 hello {'cols': 80, 'cwd': None, 'rows': 24}
+1792341476.126 conn 3 input b'echo hello-from-remote\r'
+1792341662.161 conn 3 kill
