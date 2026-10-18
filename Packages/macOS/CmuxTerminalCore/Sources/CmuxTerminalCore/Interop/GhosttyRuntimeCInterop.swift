@@ -2,12 +2,6 @@ public import Darwin
 public import Foundation
 public import GhosttyKit
 
-// lint:allow free-function — @_silgen_name FFI declaration: the symbol is
-// exported by libghostty without a public header entry, so it must be declared
-// as a bare function signature for the linker to bind.
-@_silgen_name("ghostty_surface_clear_selection")
-private func cmux_ghostty_surface_clear_selection(_ surface: ghostty_surface_t) -> Bool
-
 /// The one sanctioned seam for libghostty symbols that are linked by name
 /// rather than imported through the GhosttyKit header.
 ///
@@ -57,7 +51,7 @@ public struct GhosttyRuntimeCInterop {
     /// - Returns: Whether the runtime cleared a selection.
     @discardableResult
     public static func clearSelection(_ surface: ghostty_surface_t) -> Bool {
-        cmux_ghostty_surface_clear_selection(surface)
+        ghostty_surface_clear_selection(surface)
     }
 
 }
