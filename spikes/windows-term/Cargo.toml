@@ -1,0 +1,39 @@
+# ShellX W0 Task 7 spike: one GPUI window drawing a libghostty-vt grid over
+# ConPTY (PowerShell). Throwaway code on `shellx/w0-spikes`, never merged.
+#
+# Its own Cargo workspace (the empty [workspace] table below), so nothing in
+# upstream's cmux-tui workspace, lockfile or CI changes. ghostty-vt and
+# cmux-pty are path dependencies; they still inherit their fields from the
+# cmux-tui workspace they belong to.
+
+[package]
+name = "shellx-term-spike"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.91"
+license = "GPL-3.0-or-later"
+publish = false
+
+[[bin]]
+name = "shellx-term-spike"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+async-channel = "2"
+cmux-pty = { path = "../../cmux-tui/crates/cmux-pty" }
+ghostty-vt = { path = "../../cmux-tui/crates/ghostty-vt" }
+
+# GPUI from crates.io, pinned exactly. Default features are off so gpui does
+# not embed its own manifest resource (ours carries the icon + manifest);
+# the Windows backend (Direct3D 11 + DirectWrite) is not feature-gated.
+[target.'cfg(windows)'.dependencies]
+gpui = { version = "=0.2.2", default-features = false }
+
+[build-dependencies]
+embed-resource = "3"
+
+[workspace]
+
+[profile.release]
+codegen-units = 4

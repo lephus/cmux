@@ -179,3 +179,102 @@ jobs:
           path: ${{ env.CMUX_TUI_EXE }}
           if-no-files-found: error
           retention-days: 14
+
+  # ShellX W0 Task 7 Step 1: the GPUI terminal-window spike
+  # (spikes/windows-term, its own Cargo workspace). Builds the release exe,
+  # runs its headless --smoke (ConPTY + libghostty-vt, no window), and
+  # uploads it for the manual IME / DPI / latency / Narrator checks.
+  term-spike:
+    name: term spike (x86_64-pc-windows-msvc)
+    runs-on: ${{ github.repository_owner != 'manaflow-ai' && 'windows-2025' || 'blacksmith-4vcpu-windows-2025' }}
+    timeout-minutes: 75
+    permissions:
+      contents: read
+    env:
+      TARGET: x86_64-pc-windows-msvc
+      SPIKE_DIR: spikes/windows-term
+      SPIKE_EXE: spikes/windows-term/target/x86_64-pc-windows-msvc/release/shellx-term-spike.exe
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Init ghostty submodule
+        shell: bash
+        run: bash scripts/ci/init-submodule.sh ghostty
+
+      - name: Resolve Ghostty Zig version
+        id: ghostty-zig-version
+        shell: bash
+        run: echo "version=$(bash ./scripts/ghostty-zig-version.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Install zig
+        uses: mlugg/setup-zig@8d6198c65fb0feaa111df26e6b467fea8345e46f # v2.0.5
+        with:
+          version: ${{ steps.ghostty-zig-version.outputs.version }}
+
+      - name: Set up pinned Rust
+        uses: ./.github/actions/setup-cmux-tui-rust
+
+      - name: Install Rust target
+        shell: bash
+        run: rustup target add "$TARGET"
+
+      - name: Cache spike target dir
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: spikes/windows-term -> target
+          key: shellx-term-spike
+          cache-on-failure: true
+
+      - name: Show toolchain
+        shell: bash
+        run: |
+          zig version
+          rustc --version --verbose
+          cargo --version
+          where fxc.exe || ls "/c/Program Files (x86)/Windows Kits/10/bin/" || true
+
+      - name: Build shellx-term-spike
+        id: build-spike
+        working-directory: ${{ env.SPIKE_DIR }}
+        shell: bash
+        run: |
+          unset CMUX_GHOSTTY_SRC
+          cargo build --release --locked --target "$TARGET"
+          ls -la "target/$TARGET/release/"
+
+      - name: Stage artifact
+        id: stage
+        if: always() && steps.build-spike.outcome == 'success'
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp "$SPIKE_EXE" dist/
+          # Ship any runtime DLL the build produced next to the exe.
+          find "$SPIKE_DIR/target/$TARGET/release" -maxdepth 1 -name '*.dll' -exec cp {} dist/ \; || true
+          ls -la dist
+          # Imported DLLs, so a missing runtime dependency shows up here.
+          dumpbin_path="$(ls /c/Program\ Files/Microsoft\ Visual\ Studio/*/*/VC/Tools/MSVC/*/bin/Hostx64/x64/dumpbin.exe 2>/dev/null | head -1)"
+          if [[ -n "$dumpbin_path" ]]; then
+            "$dumpbin_path" //nologo //dependents dist/shellx-term-spike.exe || true
+          fi
+
+      - name: Upload shellx-term-spike
+        if: always() && steps.stage.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: shellx-term-spike
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Headless smoke (ConPTY + libghostty-vt, no window)
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 180 "./$SPIKE_EXE" --smoke 2>&1 | tee smoke.log
+          # The release exe is a GUI-subsystem binary; the exit code is the
+          # verdict, the log line is informational.
+          grep -F "smoke: PASS" smoke.log || echo "::warning::no PASS line captured (exit code was 0)"
