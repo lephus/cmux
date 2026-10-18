@@ -1,0 +1,241 @@
+{
+  "app": "/Users/lehuuphu/Library/Developer/Xcode/DerivedData/cmux-perf-base/Build/Products/Release/cmux DEV perf-base.app",
+  "bundle_id": "com.cmuxterm.app.debug.perf.base",
+  "commit": "122037ee4d",
+  "metrics": {
+    "cold_start_ms": 2103.5571098327637,
+    "cat_100mb_ms": 392.0,
+    "idle_rss_mb_4panes": 341.625,
+    "idle_cpu_pct": 0.6083333333333333,
+    "hitch_ms_per_s": 22.776866666666685,
+    "max_hitch_ms": 83.33,
+    "keystroke_ms": null
+  },
+  "samples": {
+    "cold_start_ms": [
+      5488.252878189087,
+      2103.5571098327637,
+      1881.047010421753,
+      2661.1168384552,
+      1951.31516456604
+    ],
+    "cat_100mb_ms": [
+      571.0,
+      371.0,
+      392.0,
+      394.0,
+      381.0
+    ],
+    "idle_rss_mb_4panes": [
+      341.625,
+      324.953125,
+      343.203125,
+      187.9375,
+      342.5
+    ],
+    "idle_cpu_pct": [
+      0.5583333333333333,
+      0.875,
+      0.525,
+      1.1166666666666667,
+      0.6083333333333333
+    ],
+    "hitch_ms_per_s": [
+      13.333466566666665,
+      0.0,
+      22.776866666666685,
+      76.66529973333336,
+      36.66664426666668
+    ],
+    "max_hitch_ms": [
+      66.667125,
+      0.0,
+      83.33,
+      99.996,
+      83.33375
+    ],
+    "runs": [
+      {
+        "run": 1,
+        "cold_start_ms": 5488.252878189087,
+        "cat_100mb_ms": 571.0,
+        "idle": {
+          "panes": 4,
+          "idle_rss_mb_4panes": 341.625,
+          "rss_mb_by_process": {
+            "Contents/MacOS/cmux": 332.640625,
+            "Contents/Resources/bin/cmux-paste-text-worker": 8.984375
+          },
+          "idle_cpu_pct": 0.5583333333333333,
+          "cpu_pct_samples": [
+            0.5,
+            1.4,
+            0.6,
+            0.3,
+            0.8,
+            0.4,
+            0.6,
+            0.5,
+            0.2,
+            0.7,
+            0.5,
+            0.2
+          ]
+        },
+        "hitches": {
+          "hitch_ms_per_s": 13.333466566666665,
+          "max_hitch_ms": 66.667125,
+          "hitch_count": 10
+        }
+      },
+      {
+        "run": 2,
+        "cold_start_ms": 2103.5571098327637,
+        "cat_100mb_ms": 371.0,
+        "idle": {
+          "panes": 4,
+          "idle_rss_mb_4panes": 324.953125,
+          "rss_mb_by_process": {
+            "Contents/MacOS/cmux": 315.96875,
+            "Contents/Resources/bin/cmux-paste-text-worker": 8.984375
+          },
+          "idle_cpu_pct": 0.875,
+          "cpu_pct_samples": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.3,
+            0.0,
+            0.0,
+            10.1,
+            0.0,
+            0.1
+          ]
+        },
+        "hitches": {
+          "hitch_ms_per_s": 0.0,
+          "max_hitch_ms": 0.0,
+          "hitch_count": 0
+        }
+      },
+      {
+        "run": 3,
+        "cold_start_ms": 1881.047010421753,
+        "cat_100mb_ms": 392.0,
+        "idle": {
+          "panes": 4,
+          "idle_rss_mb_4panes": 343.203125,
+          "rss_mb_by_process": {
+            "Contents/MacOS/cmux": 334.21875,
+            "Contents/Resources/bin/cmux-paste-text-worker": 8.984375
+          },
+          "idle_cpu_pct": 0.525,
+          "cpu_pct_samples": [
+            0.4,
+            0.2,
+            0.6,
+            0.3,
+            0.2,
+            0.1,
+            4.3,
+            0.0,
+            0.1,
+            0.1,
+            0.0,
+            0.0
+          ]
+        },
+        "hitches": {
+          "hitch_ms_per_s": 22.776866666666685,
+          "max_hitch_ms": 83.33,
+          "hitch_count": 35
+        }
+      },
+      {
+        "run": 4,
+        "cold_start_ms": 2661.1168384552,
+        "cat_100mb_ms": 394.0,
+        "idle": {
+          "panes": 4,
+          "idle_rss_mb_4panes": 187.9375,
+          "rss_mb_by_process": {
+            "Contents/MacOS/cmux": 180.390625,
+            "Contents/Resources/bin/cmux-paste-text-worker": 7.546875
+          },
+          "idle_cpu_pct": 1.1166666666666667,
+          "cpu_pct_samples": [
+            0.5,
+            0.3,
+            0.4,
+            0.2,
+            5.4,
+            0.4,
+            0.5,
+            0.7,
+            0.4,
+            0.3,
+            0.4,
+            3.9
+          ]
+        },
+        "hitches": {
+          "hitch_ms_per_s": 76.66529973333336,
+          "max_hitch_ms": 99.996,
+          "hitch_count": 45
+        }
+      },
+      {
+        "run": 5,
+        "cold_start_ms": 1951.31516456604,
+        "cat_100mb_ms": 381.0,
+        "idle": {
+          "panes": 4,
+          "idle_rss_mb_4panes": 342.5,
+          "rss_mb_by_process": {
+            "Contents/MacOS/cmux": 333.5,
+            "Contents/Resources/bin/cmux-paste-text-worker": 9.0
+          },
+          "idle_cpu_pct": 0.6083333333333333,
+          "cpu_pct_samples": [
+            0.0,
+            3.1,
+            0.0,
+            0.1,
+            0.0,
+            0.0,
+            0.1,
+            0.0,
+            0.0,
+            4.0,
+            0.0,
+            0.0
+          ]
+        },
+        "hitches": {
+          "hitch_ms_per_s": 36.66664426666668,
+          "max_hitch_ms": 83.33375,
+          "hitch_count": 24
+        }
+      }
+    ]
+  },
+  "method": {
+    "runs": 5,
+    "purge": false,
+    "idle_wait_s": 60.0,
+    "cpu_interval_s": 5.0,
+    "cpu_window_s": 60.0,
+    "cat_file_bytes": 104857600,
+    "hitches": true,
+    "hitch_record_s": 30,
+    "hitch_sidebar_toggles": 20
+  },
+  "machine": {
+    "macos": "26.5.2",
+    "model": "Mac14,7",
+    "cpu": "Apple M2"
+  }
+}

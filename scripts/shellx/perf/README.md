@@ -117,7 +117,13 @@ read (cmux's integration hands a user `ZDOTDIR` through as
 4. **Hitches** (`hitch_ms_per_s`, `max_hitch_ms`; skipped by `--no-hitches`)
    - `xcrun xctrace record --template "Animation Hitches" --all-processes --time-limit 30s --no-prompt --output <work>/hitches-<run>.trace`
      (all processes, not `--attach`, so it works on hardened-runtime release
-     builds without `get-task-allow`).
+     builds without `get-task-allow`). The trace can take several GB, so it is
+     deleted after export together with the `instruments*.ktrace` /
+     `xrtmp__*` scratch xctrace leaves in `getconf DARWIN_USER_TEMP_DIR` /
+     `DARWIN_USER_CACHE_DIR` (~5 GB per recording; only files created during
+     this recording), so only the numbers are kept; the run stops when less
+     than 12 GB is free, and a failed `xctrace` (hang after the time limit →
+     SIGINT, or exit -5 while saving) is retried up to 3 times.
    - 3 s after starting the recorder: `cli --socket S send -- 'seq 1 2000000\n'`,
      then `cli --socket S right-sidebar toggle` 20 times, 1 s apart (an even
      count, so the sidebar ends where it started).

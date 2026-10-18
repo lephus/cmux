@@ -67,6 +67,8 @@ HITCH_RECORD_S = 30
 HITCH_LOAD_DELAY_S = 3.0
 HITCH_SIDEBAR_TOGGLES = 20
 HITCH_TOGGLE_INTERVAL_S = 1.0
+HITCH_ATTEMPTS = 3
+HITCH_MIN_FREE_BYTES = 12 * 1024**3
 KILL_GRACE_S = 5.0
 
 # Environment of the terminal that runs the harness (often a cmux or ShellX
@@ -280,6 +282,32 @@ def all_process_paths() -> dict[int, str]:
         if length > 0:
             paths[pid] = path_buffer.value.decode("utf-8", "replace")
     return paths
+
+
+def remove_path(path: Path) -> None:
+    if path.is_dir():
+        shutil.rmtree(path)
+    elif path.exists():
+        path.unlink()
+
+
+def remove_xctrace_scratch(since: float) -> None:
+    """xctrace leaves ~5 GB of instruments*.ktrace / xrtmp__* scratch per 30 s recording, even on success.
+
+    Only entries created after `since` (this harness's recording) are removed.
+    """
+    candidates: list[Path] = []
+    for name, pattern in (("DARWIN_USER_TEMP_DIR", "instruments*.ktrace"),
+                          ("DARWIN_USER_CACHE_DIR", "com.apple.dt.InstrumentsCLI/path_manager/xrtmp__*")):
+        base = subprocess.run(["getconf", name], capture_output=True, text=True).stdout.strip()
+        if base:
+            candidates.extend(Path(base).glob(pattern))
+    for path in candidates:
+        try:
+            if path.stat().st_birthtime >= since:
+                remove_path(path)
+        except FileNotFoundError:
+            pass
 
 
 def bundle_processes(bundle: Bundle) -> dict[int, str]:
@@ -544,9 +572,31 @@ class Session:
     # -- hitches -------------------------------------------------------------
 
     def hitches(self, label: str) -> dict[str, Any]:
+        # xctrace itself is flaky (hangs after --time-limit, or exits -5 while saving): retry the whole recording.
+        for attempt in range(1, HITCH_ATTEMPTS + 1):
+            try:
+                return self._hitches_once(label)
+            except (HarnessError, subprocess.SubprocessError) as error:
+                if attempt == HITCH_ATTEMPTS:
+                    raise
+                print(f"  xctrace attempt {attempt}/{HITCH_ATTEMPTS} failed, retrying: {str(error)[-300:]}", flush=True)
+        raise AssertionError("unreachable")
+
+    def _hitches_once(self, label: str) -> dict[str, Any]:
         trace = self.work / f"hitches-{label}.trace"
-        if trace.exists():
-            shutil.rmtree(trace) if trace.is_dir() else trace.unlink()
+        remove_path(trace)
+        free = shutil.disk_usage(self.work).free
+        if free < HITCH_MIN_FREE_BYTES:
+            raise SystemExit(f"error: only {free / 1e9:.1f} GB free; an all-processes trace can take several GB")
+        started = time.time()
+        try:
+            return self._record_hitches(trace)
+        finally:
+            # Traces of all processes are GBs each; keep only the numbers.
+            remove_path(trace)
+            remove_xctrace_scratch(started)
+
+    def _record_hitches(self, trace: Path) -> dict[str, Any]:
         recorder = subprocess.Popen(
             [
                 "xcrun", "xctrace", "record",
@@ -567,7 +617,12 @@ class Session:
             for _ in range(HITCH_SIDEBAR_TOGGLES):
                 self.run_cli("right-sidebar", "toggle")
                 time.sleep(HITCH_TOGGLE_INTERVAL_S)
-            output, _ = recorder.communicate(timeout=HITCH_RECORD_S + 120)
+            try:
+                output, _ = recorder.communicate(timeout=HITCH_RECORD_S + 120)
+            except subprocess.TimeoutExpired:
+                # xctrace sometimes hangs after --time-limit; SIGINT makes it stop and save the trace.
+                recorder.send_signal(signal.SIGINT)
+                output, _ = recorder.communicate(timeout=120)
         except BaseException:
             recorder.kill()
             raise
@@ -585,7 +640,7 @@ class Session:
             check=True,
         ).stdout
         durations = hitch_durations_ms(exported, bundle_processes(self.bundle).keys())
-        return {**hitch_metrics(durations, HITCH_RECORD_S), "hitch_count": len(durations), "trace": str(trace)}
+        return {**hitch_metrics(durations, HITCH_RECORD_S), "hitch_count": len(durations)}
 
     @staticmethod
     def hitch_schema(trace: Path) -> str:
